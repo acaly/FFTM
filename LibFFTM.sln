@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.33205.214
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibFFTM", "LibFFTM\LibFFTM.csproj", "{9F3B7AD6-8B13-459E-A126-FD3A70A01BDA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FFTMTest", "FFTMTest\FFTMTest.csproj", "{CCC79823-D22C-4A72-9F23-892C91755B46}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FFTMBenchmark", "FFTMBenchmark\FFTMBenchmark.csproj", "{A4B60F65-D188-4747-B24C-94C095F80012}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9F3B7AD6-8B13-459E-A126-FD3A70A01BDA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9F3B7AD6-8B13-459E-A126-FD3A70A01BDA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9F3B7AD6-8B13-459E-A126-FD3A70A01BDA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9F3B7AD6-8B13-459E-A126-FD3A70A01BDA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CCC79823-D22C-4A72-9F23-892C91755B46}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CCC79823-D22C-4A72-9F23-892C91755B46}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CCC79823-D22C-4A72-9F23-892C91755B46}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CCC79823-D22C-4A72-9F23-892C91755B46}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A4B60F65-D188-4747-B24C-94C095F80012}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A4B60F65-D188-4747-B24C-94C095F80012}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A4B60F65-D188-4747-B24C-94C095F80012}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A4B60F65-D188-4747-B24C-94C095F80012}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6A0575A4-2DE4-4CC1-BDCE-AEC4F37CD0B5}
+	EndGlobalSection
+EndGlobal
