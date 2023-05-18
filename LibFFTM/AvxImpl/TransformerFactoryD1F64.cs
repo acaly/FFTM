@@ -28,14 +28,33 @@ namespace LibFFTM.AvxImpl
                 var (im, re) = Math.SinCos(Math.PI * 2 / n);
                 Complex w = new(re, -im);
                 Complex wi = Complex.One;
-                var ret = new double[n];
-                for (int j = 0; j < n / 2; ++j)
+                var ret = new double[n / 2];
+
+                int[] permArray = new int[n / 8];
+                MakeSwapArray(permArray.AsSpan(), 0, 1, 0);
+
+                for (int j = 0; j < n / 8; ++j)
                 {
-                    ret[j * 2 + 0] = wi.Real;
-                    ret[j * 2 + 1] = wi.Imaginary;
+                    var s = permArray[j];
+                    ret[s * 4 + 0] = wi.Real;
+                    ret[s * 4 + 1] = wi.Imaginary;
+                    wi *= w;
+                    ret[s * 4 + 2] = wi.Real;
+                    ret[s * 4 + 3] = wi.Imaginary;
                     wi *= w;
                 }
                 return ret;
+            }
+
+            private static void MakeSwapArray(Span<int> span, int offset, int interval, int index)
+            {
+                if (interval == span.Length)
+                {
+                    span[offset] = index;
+                    return;
+                }
+                MakeSwapArray(span, offset, interval * 2, index);
+                MakeSwapArray(span, offset + interval, interval * 2, index + span.Length / 2 / interval);
             }
 
             public override AbstractTransformer<double, double> CreateTransformer()

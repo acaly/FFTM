@@ -24,20 +24,22 @@ namespace LibFFTM.AvxImpl
             nint len4 = 1;
             nint count = n4;
 
-            Iteration_R4V2_I(n4, len4, count, inputPtr, tempPtr);
+            Iteration_R4V2_I(n4, len4, count, inputPtr, outputPtr);
             len4 <<= 2;
             count >>= 2;
 
+            double* table = _tableAll;
             while (count >= 16)
             {
-                Iteration_R4V2(n4, len4, count, tempPtr, outputPtr);
-                Iteration_R4V2(n4, len4 << 2, count >> 2, outputPtr, tempPtr);
+                Iteration_R4V2(n4, len4, count, outputPtr, ref table);
+                Iteration_R4V2(n4, len4 << 2, count >> 2, outputPtr, ref table);
                 len4 <<= 4;
                 count >>= 4;
             }
 
             Debug.Assert(count == 1);
-            Iteration_R2V2_F(n4, len4, count, tempPtr, outputPtr, _table);
+            Iteration_R2V2_F(n4, len4, count, outputPtr, _table);
+            Iteration_Swap(n4, outputPtr, _outputTable);
         }
     }
 
@@ -62,17 +64,19 @@ namespace LibFFTM.AvxImpl
             len4 <<= 2;
             count >>= 2;
 
+            double* table = _tableAll;
             while (count >= 16)
             {
-                Iteration_R4V2(n4, len4, count, outputPtr, tempPtr);
-                Iteration_R4V2(n4, len4 << 2, count >> 2, tempPtr, outputPtr);
+                Iteration_R4V2(n4, len4, count, outputPtr, ref table);
+                Iteration_R4V2(n4, len4 << 2, count >> 2, outputPtr, ref table);
                 len4 <<= 4;
                 count >>= 4;
             }
 
             Debug.Assert(count == 2);
-            Iteration_R4V2(n4, len4, count, outputPtr, tempPtr);
-            Iteration_F(n4, len4 << 2, count >> 2, tempPtr, outputPtr, _table);
+            Iteration_R4V2(n4, len4, count, outputPtr, ref table);
+            Iteration_F(n4, len4 << 2, count >> 2, outputPtr, _table);
+            Iteration_Swap(n4, outputPtr, _outputTable);
         }
     }
 
@@ -97,17 +101,19 @@ namespace LibFFTM.AvxImpl
             len4 <<= 2;
             count >>= 2;
 
+            double* table = _tableAll;
             while (count >= 16)
             {
-                Iteration_R4V2(n4, len4, count, outputPtr, tempPtr);
-                Iteration_R4V2(n4, len4 << 2, count >> 2, tempPtr, outputPtr);
+                Iteration_R4V2(n4, len4, count, outputPtr, ref table);
+                Iteration_R4V2(n4, len4 << 2, count >> 2, outputPtr, ref table);
                 len4 <<= 4;
                 count >>= 4;
             }
 
             Debug.Assert(count == 4);
-            Iteration_R4V2(n4, len4, count, outputPtr, tempPtr);
-            Iteration_R2V2_F(n4, len4 << 2, count >> 2, tempPtr, outputPtr, _table);
+            Iteration_R4V2(n4, len4, count, outputPtr, ref table);
+            Iteration_R2V2_F(n4, len4 << 2, count >> 2, outputPtr, _table);
+            Iteration_Swap(n4, outputPtr, _outputTable);
         }
     }
 
@@ -128,22 +134,24 @@ namespace LibFFTM.AvxImpl
             nint len4 = 1;
             nint count = n4;
 
-            Iteration_R4V2_I(n4, len4, count, inputPtr, tempPtr);
+            Iteration_R4V2_I(n4, len4, count, inputPtr, outputPtr);
             len4 <<= 2;
             count >>= 2;
 
+            double* table = _tableAll;
             while (count >= 16)
             {
-                Iteration_R4V2(n4, len4, count, tempPtr, outputPtr);
-                Iteration_R4V2(n4, len4 << 2, count >> 2, outputPtr, tempPtr);
+                Iteration_R4V2(n4, len4, count, outputPtr, ref table);
+                Iteration_R4V2(n4, len4 << 2, count >> 2, outputPtr, ref table);
                 len4 <<= 4;
                 count >>= 4;
             }
 
             Debug.Assert(count == 8);
-            Iteration_R4V2(n4, len4, count, tempPtr, outputPtr);
-            Iteration_R4V2(n4, len4 << 2, count >> 2, outputPtr, tempPtr);
-            Iteration_F(n4, len4 << 4, count >> 4, tempPtr, outputPtr, _table);
+            Iteration_R4V2(n4, len4, count, outputPtr, ref table);
+            Iteration_R4V2(n4, len4 << 2, count >> 2, outputPtr, ref table);
+            Iteration_F(n4, len4 << 4, count >> 4, outputPtr, _table);
+            Iteration_Swap(n4, outputPtr, _outputTable);
         }
     }
 }

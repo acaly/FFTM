@@ -47,22 +47,20 @@ namespace FFTMTest.AvxImpl
             }
         }
 
-        [Fact]
-        public void Test16()
+        [Theory]
+        [InlineData(16)]
+        [InlineData(32)]
+        [InlineData(64)]
+        [InlineData(128)]
+        [InlineData(256)]
+        [InlineData(512)]
+        [InlineData(1024)]
+        public void TestAny(int n)
         {
-            var transformer = CreateTransformer(16);
+            var transformer = CreateTransformer(n);
             Fill(transformer);
             transformer.Transform();
-            CheckResult(16, transformer);
-        }
-
-        [Fact]
-        public void Test1024()
-        {
-            var transformer = CreateTransformer(1024);
-            Fill(transformer);
-            transformer.Transform();
-            CheckResult(1024, transformer);
+            CheckResult(n, transformer);
         }
     }
 }
