@@ -59,19 +59,9 @@ namespace LibFFTM.AvxImpl
 
             public override AbstractTransformer<double, double> CreateTransformer()
             {
-                switch (_bits & 3)
-                {
-                case 1:
-                    return new TransformerD1F64M1(_n, _table);
-                case 2:
-                    return new TransformerD1F64M2(_n, _table);
-                case 3:
-                    return new TransformerD1F64M3(_n, _table);
-                case 0:
-                    return new TransformerD1F64M4(_n, _table);
-                default:
-                    return null!;
-                }
+                return (_bits & 1) == 0 ?
+                    new TransformerD1F64M2(_n, _table) :
+                    new TransformerD1F64M1(_n, _table);
             }
         }
 

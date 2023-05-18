@@ -24,7 +24,7 @@ namespace LibFFTM.AvxImpl
 
         protected readonly int _n;
         private readonly double[] _buffers;
-        protected readonly double* _input, _output, _temp, _table;
+        protected readonly double* _input, _output, _table;
 
         public override Span<double> Input => new(_input, _n * 2);
         public override Span<double> Output => new(_output, _n * 2);
@@ -36,10 +36,9 @@ namespace LibFFTM.AvxImpl
         public AbstractTransformerD1F64(int n, ReadOnlySpan<double> table)
         {
             _n = n;
-            _input = AllocAligned(n * 7, 32, out _buffers);
+            _input = AllocAligned(n * 5, 32, out _buffers);
             _output = &_input[n * 2];
-            _temp = &_input[n * 4];
-            _table = &_input[n * 6];
+            _table = &_input[n * 4];
             table.CopyTo(new(_table, n));
 
             //TODO move to procedure
@@ -109,9 +108,8 @@ namespace LibFFTM.AvxImpl
 
             var countB = count / 6;
             var countA = countB + 1;
-            var halfCount = count >> 2;
-            var countC1 = halfCount - countA;
-            var countC2 = halfCount - countB;
+            var halfCount = count >> 1;
+            var countC = halfCount - countA - countB;
 
             var n8 = n4 >> 1;
             n4 <<= 2;
@@ -144,7 +142,9 @@ namespace LibFFTM.AvxImpl
             }
 
             //C-AB.
-            for (nint j = 0; j < countC1; ++j)
+            var wi10 = Avx.Permute(wi1, 0b0000);
+            var wi11 = Avx.Permute(wi1, 0b1111);
+            for (nint j = 0; j < countC; ++j)
             {
                 var p = Vector256.LoadAligned(&inputPtr[0]);
                 var q = Vector256.LoadAligned(&inputPtr[n4]);
@@ -155,28 +155,7 @@ namespace LibFFTM.AvxImpl
                 var (a0, a1) = TypeA(p, q);
                 var (b0, b1) = TypeB(u, v);
                 var (o0, o2) = TypeCI(a0, b0, signMulI);
-                var (o1, o3) = TypeC(a1, b1, signMulI, wi1);
-
-                o0.StoreAligned(&outputPtr[0]);
-                o1.StoreAligned(&outputPtr[n4]);
-                o2.StoreAligned(&outputPtr[n8]);
-                o3.StoreAligned(&outputPtr[n4 + n8]);
-                outputPtr += 4;
-            }
-
-            //C-AB.
-            for (nint j = 0; j < countC2; ++j)
-            {
-                var p = Vector256.LoadAligned(&inputPtr[0]);
-                var q = Vector256.LoadAligned(&inputPtr[n4]);
-                var u = Vector256.LoadAligned(&inputPtr[n8]);
-                var v = Vector256.LoadAligned(&inputPtr[n4 + n8]);
-                inputPtr += 4;
-
-                var (a0, a1) = TypeA(p, q);
-                var (b0, b1) = TypeB(u, v);
-                var (o0, o2) = TypeCI(a0, b0, signMulI);
-                var (o1, o3) = TypeC(a1, b1, signMulI, wi1);
+                var (o1, o3) = TypeC(a1, b1, signMulI, wi10, wi11);
 
                 o0.StoreAligned(&outputPtr[0]);
                 o1.StoreAligned(&outputPtr[n4]);
@@ -212,9 +191,8 @@ namespace LibFFTM.AvxImpl
         {
             var countB = count / 6;
             var countA = countB + 1;
-            var halfCount = count >> 2;
-            var countC1 = halfCount - countA;
-            var countC2 = halfCount - countB;
+            var halfCount = count >> 1;
+            var countC = halfCount - countA - countB;
 
             var n8 = n4 >> 1;
             count <<= 1;
@@ -235,6 +213,8 @@ namespace LibFFTM.AvxImpl
                 table += 6;
 
                 //A-AC.
+                var wi20 = Avx.Permute(wi2, 0b0000);
+                var wi21 = Avx.Permute(wi2, 0b1111);
                 for (nint j = 0; j < countA; ++j)
                 {
                     var p = Vector256.LoadAligned(&inputPtr[0]);
@@ -243,7 +223,7 @@ namespace LibFFTM.AvxImpl
                     var v = Vector256.LoadAligned(&inputPtr[count * 3]);
 
                     var (a0, a1) = TypeA(p, q);
-                    var (c0, c1) = TypeC(u, v, signMulI, wi2);
+                    var (c0, c1) = TypeC(u, v, signMulI, wi20, wi21);
                     var (o0, o2) = TypeA(a0, c0);
                     var (o1, o3) = TypeA(a1, c1);
 
@@ -255,7 +235,11 @@ namespace LibFFTM.AvxImpl
                 }
 
                 //C-AB.
-                for (nint j = 0; j < countC1; ++j)
+                var wi00 = Avx.Permute(wi0, 0b0000);
+                var wi01 = Avx.Permute(wi0, 0b1111);
+                var wi10 = Avx.Permute(wi1, 0b0000);
+                var wi11 = Avx.Permute(wi1, 0b1111);
+                for (nint j = 0; j < countC; ++j)
                 {
                     var p = Vector256.LoadAligned(&inputPtr[0]);
                     var q = Vector256.LoadAligned(&inputPtr[count * 2]);
@@ -264,28 +248,8 @@ namespace LibFFTM.AvxImpl
 
                     var (a0, a1) = TypeA(p, q);
                     var (b0, b1) = TypeB(u, v);
-                    var (o0, o2) = TypeC(a0, b0, signMulI, wi0);
-                    var (o1, o3) = TypeC(a1, b1, signMulI, wi1);
-
-                    o0.StoreAligned(&inputPtr[0]);
-                    o1.StoreAligned(&inputPtr[count * 2]);
-                    o2.StoreAligned(&inputPtr[count]);
-                    o3.StoreAligned(&inputPtr[count * 3]);
-                    inputPtr += 4;
-                }
-
-                //C-AB.
-                for (nint j = 0; j < countC2; ++j)
-                {
-                    var p = Vector256.LoadAligned(&inputPtr[0]);
-                    var q = Vector256.LoadAligned(&inputPtr[count * 2]);
-                    var u = Vector256.LoadAligned(&inputPtr[count]);
-                    var v = Vector256.LoadAligned(&inputPtr[count * 3]);
-
-                    var (a0, a1) = TypeA(p, q);
-                    var (b0, b1) = TypeB(u, v);
-                    var (o0, o2) = TypeC(a0, b0, signMulI, wi0);
-                    var (o1, o3) = TypeC(a1, b1, signMulI, wi1);
+                    var (o0, o2) = TypeC(a0, b0, signMulI, wi00, wi01);
+                    var (o1, o3) = TypeC(a1, b1, signMulI, wi10, wi11);
 
                     o0.StoreAligned(&inputPtr[0]);
                     o1.StoreAligned(&inputPtr[count * 2]);
@@ -302,7 +266,7 @@ namespace LibFFTM.AvxImpl
                     var u = Vector256.LoadAligned(&inputPtr[count]);
                     var v = Vector256.LoadAligned(&inputPtr[count * 3]);
 
-                    var (c0, c1) = TypeC(p, q, signMulI, wi2);
+                    var (c0, c1) = TypeC(p, q, signMulI, wi20, wi21);
                     var (b0, b1) = TypeB(u, v);
                     var (o0, o2) = TypeB(c0, b0);
                     var (o1, o3) = TypeB(c1, b1);
@@ -362,7 +326,6 @@ namespace LibFFTM.AvxImpl
             Debug.Assert(count == 0);
             var n2 = n4 << 1;
             n2 <<= 1;
-            n4 <<= 1;
             var len16 = len4 >> 2;
             var pwi = table;
             for (nint j = 0; j < len16; ++j)
@@ -435,10 +398,8 @@ namespace LibFFTM.AvxImpl
         //A type-C radix-2 butterfly unit.
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static (Vector256<double>, Vector256<double>) TypeC(Vector256<double> a, Vector256<double> b,
-            Vector256<double> sign, Vector256<double> w)
+            Vector256<double> sign, Vector256<double> w0, Vector256<double> w1)
         {
-            var w0 = Avx.Permute(w, 0b0000);
-            var w1 = Avx.Permute(w, 0b1111);
             var aw = Mul(a, w0, w1);
             var bw = MulT(b, w0, w1);
             return (aw + bw, Avx.Permute(aw - bw, 0b0101) ^ sign);
