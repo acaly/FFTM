@@ -52,14 +52,17 @@ namespace FFTMBenchmark
 
         #pragma warning disable CA1822 // Mark members as static
 
+        [Params(1024)]
+        public int N { get => 1024; set { } }
+
         [Benchmark]
-        public void F64N1024()
+        public void FFTM()
         {
             _transformerF64N1024.Transform();
         }
 
         [Benchmark]
-        public void FFTWF64N1024()
+        public void FFTW()
         {
             _transformerFFTWF64N1024.Transform();
         }
