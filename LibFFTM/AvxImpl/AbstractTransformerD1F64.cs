@@ -142,8 +142,6 @@ namespace LibFFTM.AvxImpl
             }
 
             //C-AB.
-            var wi10 = Avx.Permute(wi1, 0b0000);
-            var wi11 = Avx.Permute(wi1, 0b1111);
             for (nint j = 0; j < countC; ++j)
             {
                 var p = Vector256.LoadAligned(&inputPtr[0]);
@@ -155,7 +153,7 @@ namespace LibFFTM.AvxImpl
                 var (a0, a1) = TypeA(p, q);
                 var (b0, b1) = TypeB(u, v);
                 var (o0, o2) = TypeCI(a0, b0, signMulI);
-                var (o1, o3) = TypeC(a1, b1, signMulI, wi10, wi11);
+                var (o1, o3) = TypeC(a1, b1, signMulI, wi1, wi1);
 
                 o0.StoreAligned(&outputPtr[0]);
                 o1.StoreAligned(&outputPtr[n4]);
@@ -189,97 +187,112 @@ namespace LibFFTM.AvxImpl
         //The normal radix-4 SRFFT pass (A-AC/C-AB/B-CB).
         protected static void Iteration_R4V2(nint n4, nint len4, nint count, double* input, ref double* table)
         {
+            Iteration_R4V2_Rep(n4, len4, count, count, input, ref table);
+        }
+
+        //The normal radix-4 SRFFT pass (A-AC/C-AB/B-CB).
+        protected static void Iteration_R4V2_Rep(nint n4, nint len4, nint count, nint countEnd, double* input, ref double* table)
+        {
             var countB = count / 6;
             var countA = countB + 1;
             var halfCount = count >> 1;
             var countC = halfCount - countA - countB;
-
-            var n8 = n4 >> 1;
             count <<= 1;
-            n4 <<= 2;
-            n8 <<= 2;
+            countEnd <<= 1;
+            var tablePtr = table;
 
-            double* inputPtr = input;
             Vector256<double> signMulI = Vector256.Create(-0.0, 0.0, -0.0, 0.0);
-
-            for (nint i = 0; i < len4; ++i)
+            while (count >= countEnd)
             {
-                Vector128<double> wi0h = Vector128.Load(table);
-                Vector128<double> wi1h = Vector128.Load(table + 2);
-                Vector128<double> wi2h = Vector128.Load(table + 4);
-                Vector256<double> wi0 = Vector256.Create(wi0h, wi0h);
-                Vector256<double> wi1 = Vector256.Create(wi1h, wi1h);
-                Vector256<double> wi2 = Vector256.Create(wi2h, wi2h);
-                table += 6;
+                double* inputPtr = input;
 
-                //A-AC.
-                var wi20 = Avx.Permute(wi2, 0b0000);
-                var wi21 = Avx.Permute(wi2, 0b1111);
-                for (nint j = 0; j < countA; ++j)
+                for (nint i = 0; i < len4; ++i)
                 {
-                    var p = Vector256.LoadAligned(&inputPtr[0]);
-                    var q = Vector256.LoadAligned(&inputPtr[count * 2]);
-                    var u = Vector256.LoadAligned(&inputPtr[count]);
-                    var v = Vector256.LoadAligned(&inputPtr[count * 3]);
+                    Vector128<double> wi0h = Vector128.Load(tablePtr);
+                    Vector128<double> wi1h = Vector128.Load(tablePtr + 2);
+                    Vector128<double> wi2h = Vector128.Load(tablePtr + 4);
+                    Vector256<double> wi0 = Vector256.Create(wi0h, wi0h);
+                    Vector256<double> wi1 = Vector256.Create(wi1h, wi1h);
+                    Vector256<double> wi2 = Vector256.Create(wi2h, wi2h);
+                    tablePtr += 6;
 
-                    var (a0, a1) = TypeA(p, q);
-                    var (c0, c1) = TypeC(u, v, signMulI, wi20, wi21);
-                    var (o0, o2) = TypeA(a0, c0);
-                    var (o1, o3) = TypeA(a1, c1);
+                    //A-AC.
+                    var wi20 = Avx.Permute(wi2, 0b0000);
+                    var wi21 = Avx.Permute(wi2, 0b1111);
+                    for (nint j = 0; j < countA; ++j)
+                    {
+                        var p = Vector256.LoadAligned(&inputPtr[0]);
+                        var q = Vector256.LoadAligned(&inputPtr[count * 2]);
+                        var u = Vector256.LoadAligned(&inputPtr[count]);
+                        var v = Vector256.LoadAligned(&inputPtr[count * 3]);
 
-                    o0.StoreAligned(&inputPtr[0]);
-                    o1.StoreAligned(&inputPtr[count * 2]);
-                    o2.StoreAligned(&inputPtr[count]);
-                    o3.StoreAligned(&inputPtr[count * 3]);
-                    inputPtr += 4;
+                        var (a0, a1) = TypeA(p, q);
+                        var (c0, c1) = TypeC(u, v, signMulI, wi20, wi21);
+                        var (o0, o2) = TypeA(a0, c0);
+                        var (o1, o3) = TypeA(a1, c1);
+
+                        o0.StoreAligned(&inputPtr[0]);
+                        o1.StoreAligned(&inputPtr[count * 2]);
+                        o2.StoreAligned(&inputPtr[count]);
+                        o3.StoreAligned(&inputPtr[count * 3]);
+                        inputPtr += 4;
+                    }
+
+                    //C-AB.
+                    var wi00 = Avx.Permute(wi0, 0b0000);
+                    var wi01 = Avx.Permute(wi0, 0b1111);
+                    var wi10 = Avx.Permute(wi1, 0b0000);
+                    var wi11 = Avx.Permute(wi1, 0b1111);
+                    for (nint j = 0; j < countC; ++j)
+                    {
+                        var p = Vector256.LoadAligned(&inputPtr[0]);
+                        var q = Vector256.LoadAligned(&inputPtr[count * 2]);
+                        var u = Vector256.LoadAligned(&inputPtr[count]);
+                        var v = Vector256.LoadAligned(&inputPtr[count * 3]);
+
+                        var (a0, a1) = TypeA(p, q);
+                        var (b0, b1) = TypeB(u, v);
+                        var (o0, o2) = TypeC(a0, b0, signMulI, wi00, wi01);
+                        var (o1, o3) = TypeC(a1, b1, signMulI, wi10, wi11);
+
+                        o0.StoreAligned(&inputPtr[0]);
+                        o1.StoreAligned(&inputPtr[count * 2]);
+                        o2.StoreAligned(&inputPtr[count]);
+                        o3.StoreAligned(&inputPtr[count * 3]);
+                        inputPtr += 4;
+                    }
+
+                    //B-CB.
+                    for (nint j = 0; j < countB; ++j)
+                    {
+                        var p = Vector256.LoadAligned(&inputPtr[0]);
+                        var q = Vector256.LoadAligned(&inputPtr[count * 2]);
+                        var u = Vector256.LoadAligned(&inputPtr[count]);
+                        var v = Vector256.LoadAligned(&inputPtr[count * 3]);
+
+                        var (c0, c1) = TypeC(p, q, signMulI, wi20, wi21);
+                        var (b0, b1) = TypeB(u, v);
+                        var (o0, o2) = TypeB(c0, b0);
+                        var (o1, o3) = TypeB(c1, b1);
+
+                        o0.StoreAligned(&inputPtr[0]);
+                        o1.StoreAligned(&inputPtr[count * 2]);
+                        o2.StoreAligned(&inputPtr[count]);
+                        o3.StoreAligned(&inputPtr[count * 3]);
+                        inputPtr += 4;
+                    }
+
+                    inputPtr += count * 3;
                 }
 
-                //C-AB.
-                var wi00 = Avx.Permute(wi0, 0b0000);
-                var wi01 = Avx.Permute(wi0, 0b1111);
-                var wi10 = Avx.Permute(wi1, 0b0000);
-                var wi11 = Avx.Permute(wi1, 0b1111);
-                for (nint j = 0; j < countC; ++j)
-                {
-                    var p = Vector256.LoadAligned(&inputPtr[0]);
-                    var q = Vector256.LoadAligned(&inputPtr[count * 2]);
-                    var u = Vector256.LoadAligned(&inputPtr[count]);
-                    var v = Vector256.LoadAligned(&inputPtr[count * 3]);
-
-                    var (a0, a1) = TypeA(p, q);
-                    var (b0, b1) = TypeB(u, v);
-                    var (o0, o2) = TypeC(a0, b0, signMulI, wi00, wi01);
-                    var (o1, o3) = TypeC(a1, b1, signMulI, wi10, wi11);
-
-                    o0.StoreAligned(&inputPtr[0]);
-                    o1.StoreAligned(&inputPtr[count * 2]);
-                    o2.StoreAligned(&inputPtr[count]);
-                    o3.StoreAligned(&inputPtr[count * 3]);
-                    inputPtr += 4;
-                }
-
-                //B-CB.
-                for (nint j = 0; j < countB; ++j)
-                {
-                    var p = Vector256.LoadAligned(&inputPtr[0]);
-                    var q = Vector256.LoadAligned(&inputPtr[count * 2]);
-                    var u = Vector256.LoadAligned(&inputPtr[count]);
-                    var v = Vector256.LoadAligned(&inputPtr[count * 3]);
-
-                    var (c0, c1) = TypeC(p, q, signMulI, wi20, wi21);
-                    var (b0, b1) = TypeB(u, v);
-                    var (o0, o2) = TypeB(c0, b0);
-                    var (o1, o3) = TypeB(c1, b1);
-
-                    o0.StoreAligned(&inputPtr[0]);
-                    o1.StoreAligned(&inputPtr[count * 2]);
-                    o2.StoreAligned(&inputPtr[count]);
-                    o3.StoreAligned(&inputPtr[count * 3]);
-                    inputPtr += 4;
-                }
-
-                inputPtr += count * 3;
+                len4 <<= 2;
+                count >>= 2;
+                countA = (countA + 2) >> 2;
+                countB = (countB - 1) >> 2;
+                countC = (countC + 1) >> 2;
             }
+
+            table = tablePtr;
         }
 
         //The last radix-2 SRFFT pass (A) followed by the final vectorization 2x pass.

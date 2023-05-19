@@ -28,15 +28,9 @@ namespace LibFFTM.AvxImpl
             count >>= 2;
 
             double* table = _tableAll;
-            while (count >= 4)
-            {
-                Iteration_R4V2(n4, len4, count, outputPtr, ref table);
-                len4 <<= 2;
-                count >>= 2;
-            }
+            Iteration_R4V2_Rep(n4, len4, count, 4, outputPtr, ref table);
 
-            Debug.Assert(count == 1);
-            Iteration_R2V2_F(n4, len4, count, outputPtr, _table);
+            Iteration_R2V2_F(n4, n4, 1, outputPtr, _table);
             Iteration_Swap(n4, outputPtr, _outputTable);
         }
     }
@@ -62,16 +56,10 @@ namespace LibFFTM.AvxImpl
             count >>= 2;
 
             double* table = _tableAll;
-            while (count >= 4)
-            {
-                Iteration_R4V2(n4, len4, count, outputPtr, ref table);
-                len4 <<= 2;
-                count >>= 2;
-            }
+            Iteration_R4V2_Rep(n4, len4, count, 4, outputPtr, ref table);
 
-            Debug.Assert(count == 2);
-            Iteration_R4V2(n4, len4, count, outputPtr, ref table);
-            Iteration_F(n4, len4 << 2, count >> 2, outputPtr, _table);
+            Iteration_R4V2(n4, n4 >> 1, 2, outputPtr, ref table);
+            Iteration_F(n4, n4 << 1, 0, outputPtr, _table);
             Iteration_Swap(n4, outputPtr, _outputTable);
         }
     }
